@@ -1,9 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
 const db = require('../db'); // adjust if different
 const router = express.Router();
-require('dotenv').config();
 const SECRET_KEY = process.env.JWT_SECRET;  // keep it secret
 
 // Register

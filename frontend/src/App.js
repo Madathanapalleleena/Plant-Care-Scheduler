@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Register from './components/Register';  // Import Register component
 import Login from './components/Login';      // Import Login component
-
+import Reminder from './components/Reminder';
 // PlantForm Component
 const PlantForm = ({ formData, setFormData, onSubmit }) => (
   <form onSubmit={onSubmit} className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-lg space-y-4">
@@ -193,7 +193,8 @@ function App() {
 
       {/* Care Log */}
       <CareLog />
-      
+      {/* Reminder */}
+      <Reminder />
       {/* Logout Button */}
       <button
         onClick={() => {
