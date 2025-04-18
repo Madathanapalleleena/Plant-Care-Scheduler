@@ -2,49 +2,49 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const authenticate = require('../middleware/authenticate');  // Import the authentication middleware
 
-// Get all plants
-router.get('/', (req, res) => {
-  db.query('SELECT * FROM plants', (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+// Get all plants for the logged-in user
+router.get('/', authenticate, (req, res) => {
+  const userId = req.userId; // Extracted from the JWT token
 
-    const updated = results.map(plant => {
-      const now = new Date();
-      const lastWatered = new Date(plant.last_watered || now); // optional column
-      const nextWater = new Date(lastWatered);
-      nextWater.setDate(nextWater.getDate() + parseInt(plant.watering_frequency));
+  console.log('📥 GET request received for plants');
 
-      const nextFertilizer = new Date(lastWatered);
-      nextFertilizer.setDate(nextFertilizer.getDate() + parseInt(plant.fertilizing_frequency));
+  db.query('SELECT * FROM plants WHERE user_id = ?', [userId], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching plants:', err);
+      return res.status(500).json({ error: err.message });
+    }
 
-      return {
-        ...plant,
-        next_watering: nextWater,
-        next_fertilizing: nextFertilizer
-      };
-    });
-
-    res.json(updated);
+    console.log('✅ Plants fetched:', results);
+    res.json(results); // Send the result as a response
   });
 });
 
+// Add a new plant (associated with the logged-in user)
+router.post('/', authenticate, (req, res) => {
+  const { name, watering_frequency, sunlight_requirement, fertilizing_frequency } = req.body;
+  const userId = req.userId; // Extracted from the JWT token
 
-router.post('/', (req, res) => {
-    const { name, watering_frequency, sunlight_requirement, fertilizing_frequency } = req.body;
-  
-    // Insert the new plant data into the database
-    db.query(
-      'INSERT INTO plants (name, watering_frequency, sunlight_requirement, fertilizing_frequency) VALUES (?, ?, ?, ?)',
-      [name, watering_frequency, sunlight_requirement, fertilizing_frequency],
-      (err, result) => {
-        if (err) {
-          console.error('❌ Error adding plant:', err);
-          return res.status(500).json({ error: err.message });
-        }
-  
-        console.log('✅ Plant added:', result);
-        res.status(201).json({ message: 'Plant added successfully' });
+  // Validate the required fields
+  if (!name || !watering_frequency || !sunlight_requirement || !fertilizing_frequency) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  // Insert the new plant data into the database with the user_id
+  db.query(
+    'INSERT INTO plants (name, watering_frequency, sunlight_requirement, fertilizing_frequency, user_id) VALUES (?, ?, ?, ?, ?)',
+    [name, watering_frequency, sunlight_requirement, fertilizing_frequency, userId],
+    (err, result) => {
+      if (err) {
+        console.error('❌ Error adding plant:', err);
+        return res.status(500).json({ error: err.message });
       }
-    );
-  });
+
+      console.log('✅ Plant added:', result);
+      res.status(201).json({ message: 'Plant added successfully' });
+    }
+  );
+});
+
 module.exports = router;

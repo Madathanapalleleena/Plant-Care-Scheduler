@@ -1,12 +1,16 @@
+// routes/CareLog.js
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const authenticate = require('../middleware/authenticate');  // Import the authentication middleware
 
-// Get all care logs
-router.get('/', (req, res) => {
+// Get all care logs for the logged-in user
+router.get('/', authenticate, (req, res) => {
+  const userId = req.userId; // Extracted from the JWT token
+
   console.log('📥 GET request received for care logs');
 
-  db.query('SELECT * FROM care_logs ORDER BY timestamp DESC', (err, results) => {
+  db.query('SELECT * FROM care_logs WHERE user_id = ? ORDER BY timestamp DESC', [userId], (err, results) => {
     if (err) {
       console.error('❌ Error fetching care logs:', err);
       return res.status(500).json({ error: err.message });
@@ -22,9 +26,11 @@ router.get('/', (req, res) => {
   });
 });
 
-// Add a new care log
-router.post('/', (req, res) => {
+// Add a new care log (associated with the logged-in user)
+router.post('/', authenticate, (req, res) => {
   const { message } = req.body;
+  const userId = req.userId; // Extracted from the JWT token
+
   console.log('📤 POST request to add care log:', message);
 
   if (!message) {
@@ -34,8 +40,8 @@ router.post('/', (req, res) => {
   const timestamp = new Date(); // Automatically sets current timestamp
 
   db.query(
-    'INSERT INTO care_logs (message, timestamp) VALUES (?, ?)',
-    [message, timestamp],
+    'INSERT INTO care_logs (message, timestamp, user_id) VALUES (?, ?, ?)',
+    [message, timestamp, userId],
     (err, result) => {
       if (err) {
         console.error('❌ Error adding care log:', err);

@@ -8,6 +8,28 @@ function Plantlist() {
     axios.get('http://localhost:5000/api/plants')
       .then(res => setPlants(res.data));
   }, []);
+  const today = new Date();
+
+{plants.map((plant) => {
+  const needsWater = new Date(plant.next_watering) <= today;
+  const needsFertilizer = new Date(plant.next_fertilizing) <= today;
+
+  return (
+    <div key={plant.id} className="relative bg-green-100 p-4 rounded-lg shadow-sm">
+      <h3 className="text-lg font-bold text-green-800">{plant.name}</h3>
+      <p><strong>Water:</strong> {plant.watering_frequency}</p>
+      <p><strong>Sunlight:</strong> {plant.sunlight_requirement}</p>
+      <p><strong>Fertilizer:</strong> {plant.fertilizing_frequency}</p>
+
+      {needsWater && (
+        <p className="text-red-500 mt-2">🚨 Needs Watering Today!</p>
+      )}
+      {needsFertilizer && (
+        <p className="text-yellow-600">🌱 Fertilizer Due!</p>
+      )}
+    </div>
+  );
+})}
 
   return (
     <div className="bg-white shadow-md rounded-xl p-6">

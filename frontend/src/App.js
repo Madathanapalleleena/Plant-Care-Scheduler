@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Register from './components/Register';  // Import Register component
+import Login from './components/Login';      // Import Login component
 
 // PlantForm Component
 const PlantForm = ({ formData, setFormData, onSubmit }) => (
@@ -67,7 +69,11 @@ const CareLog = () => {
 
   const fetchLogs = () => {
     axios
-      .get("http://localhost:5000/api/carelogs")
+      .get("http://localhost:5000/api/carelogs", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
       .then((res) => setLogs(res.data))
       .catch((err) => console.error("Error fetching logs:", err));
   };
@@ -77,7 +83,15 @@ const CareLog = () => {
     if (!logMessage.trim()) return;
 
     axios
-      .post("http://localhost:5000/api/carelogs", { message: logMessage })
+      .post(
+        "http://localhost:5000/api/carelogs",
+        { message: logMessage },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      )
       .then(() => {
         setLogMessage("");
         fetchLogs();
@@ -118,21 +132,30 @@ function App() {
     sunlight_requirement: "",
     fertilizing_frequency: "",
   });
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
   // Fetch the list of plants on initial load
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/plants")
-      .then((res) => setPlants(res.data))
-      .catch((err) => console.error("Error fetching plants:", err));
-  }, []);
+    if (token) {
+      axios
+        .get("http://localhost:5000/api/plants", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setPlants(res.data))
+        .catch((err) => console.error("Error fetching plants:", err));
+    }
+  }, [token]);
 
   // Handle plant form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     // Submit new plant data
     axios
-      .post("http://localhost:5000/api/plants", formData)
+      .post(
+        "http://localhost:5000/api/plants",
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
       .then(() => {
         setFormData({
           name: "",
@@ -140,11 +163,23 @@ function App() {
           sunlight_requirement: "",
           fertilizing_frequency: "",
         });
-        return axios.get("http://localhost:5000/api/plants");
+        return axios.get("http://localhost:5000/api/plants", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       })
       .then((res) => setPlants(res.data))
       .catch((err) => console.error("Error adding plant:", err));
   };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-green-50 p-6">
+        <h1 className="text-4xl font-bold text-green-800 text-center mb-8">🌱 Plant Care Scheduler</h1>
+        <Login setToken={setToken} />
+        <Register />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-green-50 p-6">
@@ -158,9 +193,19 @@ function App() {
 
       {/* Care Log */}
       <CareLog />
+      
+      {/* Logout Button */}
+      <button
+        onClick={() => {
+          localStorage.removeItem("token");
+          setToken(null);
+        }}
+        className="mt-6 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+      >
+        Logout
+      </button>
     </div>
   );
 }
 
 export default App;
-

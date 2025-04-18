@@ -11,10 +11,11 @@ app.use(express.json()); // Important to parse incoming JSON requests
 // Routes
 const plantRoutes = require('./routes/Plant');
 const careLogRoutes = require('./routes/CareLog');
+const authRoutes = require('./routes/auth');
 
 app.use('/api/plants', plantRoutes);
 app.use('/api/carelogs', careLogRoutes);
-
+app.use('/api/auth', authRoutes);  
 // Start server
 app.listen(port, () => {
   console.log(`🚀 Server is running on http://localhost:${port}`);
