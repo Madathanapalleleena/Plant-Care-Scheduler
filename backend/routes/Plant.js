@@ -5,18 +5,29 @@ const db = require('../db');
 
 // Get all plants
 router.get('/', (req, res) => {
-  console.log('📥 GET request received for plants');
-
   db.query('SELECT * FROM plants', (err, results) => {
-    if (err) {
-      console.error('❌ Error fetching plants:', err);
-      return res.status(500).json({ error: err.message });
-    }
+    if (err) return res.status(500).json({ error: err.message });
 
-    console.log('✅ Plants fetched:', results);
-    res.json(results); // Send the result as a response
+    const updated = results.map(plant => {
+      const now = new Date();
+      const lastWatered = new Date(plant.last_watered || now); // optional column
+      const nextWater = new Date(lastWatered);
+      nextWater.setDate(nextWater.getDate() + parseInt(plant.watering_frequency));
+
+      const nextFertilizer = new Date(lastWatered);
+      nextFertilizer.setDate(nextFertilizer.getDate() + parseInt(plant.fertilizing_frequency));
+
+      return {
+        ...plant,
+        next_watering: nextWater,
+        next_fertilizing: nextFertilizer
+      };
+    });
+
+    res.json(updated);
   });
 });
+
 
 router.post('/', (req, res) => {
     const { name, watering_frequency, sunlight_requirement, fertilizing_frequency } = req.body;
